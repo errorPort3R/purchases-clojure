@@ -2,7 +2,8 @@
   (:require[clojure.string :as str]
            [compojure.core :as c]
            [ring.adapter.jetty :as j]
-           [hiccup.core :as h]) 
+           [hiccup.core :as h]
+           [ring.middleware.resource :as res]) 
   (:gen-class))
 
 (defn read-purchases []
@@ -28,6 +29,8 @@
  
 (defn purchases-html [purchases]
   [:html
+   [:head
+    [:link {:href "style.css" :type "text/css" :rel "stylesheet"}]]
    [:body
     [:a{:href "/"} "All"]
     "  "
@@ -42,14 +45,16 @@
     [:a{:href "/Food"} "Food"]
     "  "
     [:a{:href "/Jewelry"} "Jewelry"]
-    [:ol
+    [:table {:class "table1"}
      (map (fn[purchase]
-            [:li (str (get purchase "customer_id") " " 
-                   (get purchase "date") " "
-                   (get purchase "credit_card") " "
-                   (get purchase "cvv") " "
-                   (get purchase "category") " ")])
+            [:tr 
+              [:td (get purchase "customer_id")] 
+              [:td (get purchase "date")]
+              [:td (get purchase "credit_card")]
+              [:td (get purchase "cvv")]
+              [:td (get purchase "category")]])
        purchases)]]])
+
 
 (defn filter-by-category [purchases category]
   (filter (fn [purchase]
@@ -72,4 +77,5 @@
 (defn -main []
   (if @server
     (.stop @server))
-  (reset! server (j/run-jetty app {:port 3000 :join? false})))
+  (let [app (res/wrap-resource app ".")]
+    (reset! server (j/run-jetty app {:port 3000 :join? false}))))
